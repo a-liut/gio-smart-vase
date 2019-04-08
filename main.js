@@ -1,11 +1,33 @@
 let moisture = 0
 let temperature = 0
-let light = 0
 let connected = false
-let registered = false
-let uart_data = ""
+let light = 0
 input.onButtonPressed(Button.A, function () {
     log()
+})
+function displayBTStatus() {
+    if (connected) {
+        basic.showString("C")
+    } else {
+        basic.showString("D")
+    }
+}
+function updateMeasurements() {
+    light = input.lightLevel()
+    temperature = input.temperature()
+    pins.analogWritePin(AnalogPin.P1, 1023)
+    moisture = pins.analogReadPin(AnalogPin.P0)
+    pins.analogWritePin(AnalogPin.P1, 0)
+}
+function sendRegisterRequest() {
+    serial.writeLine("Sending registration request")
+    bluetooth.uartWriteString("whoiam:vase")
+}
+bluetooth.onBluetoothDisconnected(function () {
+    serial.writeLine("Disconnected!")
+    connected = false
+    registered = false
+    displayBTStatus()
 })
 function log() {
     serial.writeLine("{")
@@ -19,30 +41,6 @@ function sendDataWithUART() {
     bluetooth.uartWriteValue("light", light)
     bluetooth.uartWriteValue("moisture", moisture)
 }
-function displayBTStatus() {
-    if (connected) {
-        basic.showString("C")
-    } else {
-        basic.showString("D")
-    }
-}
-function updateMeasurements() {
-    light = input.lightLevel()
-    temperature = input.temperature()
-    pins.analogWritePin(AnalogPin.P1, 1023)
-    moisture = pins.digitalReadPin(DigitalPin.P0)
-    pins.analogWritePin(AnalogPin.P1, 0)
-}
-function sendRegisterRequest() {
-    serial.writeLine("Sending registration request")
-    bluetooth.uartWriteString("whoiam:vase")
-}
-bluetooth.onBluetoothDisconnected(function () {
-    serial.writeLine("Disconnected!")
-    connected = false
-    registered = false
-    displayBTStatus()
-})
 bluetooth.onBluetoothConnected(function () {
     serial.writeLine("Connected!")
     connected = true
@@ -50,7 +48,7 @@ bluetooth.onBluetoothConnected(function () {
 })
 bluetooth.onUartDataReceived(serial.delimiters(Delimiters.NewLine), function () {
     uart_data = bluetooth.uartReadUntil(serial.delimiters(Delimiters.NewLine))
-    if (!registered) {
+    if (!(registered)) {
         switch (uart_data) {
             case "whoareyou":
                 sendRegisterRequest()
@@ -67,11 +65,13 @@ bluetooth.onUartDataReceived(serial.delimiters(Delimiters.NewLine), function () 
         serial.writeString("Data received: " + uart_data)
     }
 })
+let uart_data = ""
+let registered = false
 bluetooth.startUartService()
 basic.forever(function () {
     displayBTStatus()
-    updateMeasurements()
     if (connected && registered) {
+        updateMeasurements()
         serial.writeLine("Sending data using UART")
         sendDataWithUART()
     } else {
