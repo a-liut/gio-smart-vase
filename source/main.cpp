@@ -2,6 +2,8 @@
 #include "MicroBitUARTService.h"
 #include "MicroBitLightService.h"
 #include "MicroBitTemperatureService.h"
+#include "MicroBitMoistureSensor.h"
+#include "MicroBitMoistureService.h"
 
 #define UPDATE_TIMEOUT 2000
 
@@ -16,9 +18,11 @@
 #define VALUE_LABEL_LIGHT ManagedString("light")
 
 MicroBit uBit;
-MicroBitUARTService *uart;
 MicroBitLightService *lightService;
 MicroBitTemperatureService *temperatureService;
+MicroBitMoistureService *moistureService;
+
+MicroBitMoistureSensor moistureSensor(uBit.io.P0, uBit.io.P1);
 
 int connected = 0;
 int watering = 0;
@@ -105,6 +109,7 @@ int main()
 
     lightService = new MicroBitLightService(*uBit.ble, uBit.display);
     temperatureService = new MicroBitTemperatureService(*uBit.ble, uBit.thermometer);
+    moistureService = new MicroBitMoistureService(*uBit.ble, moistureSensor);
 
     while (1)
     {
