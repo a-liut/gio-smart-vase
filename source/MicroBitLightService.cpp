@@ -25,7 +25,7 @@ DEALINGS IN THE SOFTWARE.
 
 /**
   * Class definition for the custom MicroBit Light Service.
-  * Provides a BLE service to remotely read the silicon light of the nRF51822.
+  * Provides a BLE service to remotely read the light on the micro:bit display.
   */
 #include "MicroBitConfig.h"
 #include "ble/UUID.h"
@@ -60,7 +60,6 @@ MicroBitLightService::MicroBitLightService(BLEDevice &_ble, MicroBitDisplay &_di
 
     ble.gattServer().write(lightDataCharacteristicHandle,(uint8_t *)&lightDataCharacteristicBuffer, sizeof(lightDataCharacteristicBuffer));
 
-    ble.onDataWritten(this, &MicroBitLightService::onDataWritten);
     if (EventModel::defaultEventBus)
         EventModel::defaultEventBus->listen(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_LIGHT_SENSE, this, &MicroBitLightService::lightUpdate, MESSAGE_BUS_LISTENER_IMMEDIATE);
 }
@@ -75,14 +74,6 @@ void MicroBitLightService::lightUpdate(MicroBitEvent)
         lightDataCharacteristicBuffer = display.readLightLevel();
         ble.gattServer().notify(lightDataCharacteristicHandle,(uint8_t *)&lightDataCharacteristicBuffer, sizeof(lightDataCharacteristicBuffer));
     }
-}
-
-/**
-  * Callback. Invoked when any of our attributes are written via BLE.
-  */
-void MicroBitLightService::onDataWritten(const GattWriteCallbackParams *params)
-{
-
 }
 
 

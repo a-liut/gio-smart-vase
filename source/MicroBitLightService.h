@@ -52,11 +52,6 @@ class MicroBitLightService
     MicroBitLightService(BLEDevice &_ble, MicroBitDisplay &_display);
 
     /**
-      * Callback. Invoked when any of our attributes are written via BLE.
-      */
-    void onDataWritten(const GattWriteCallbackParams *params);
-
-    /**
      * Light update callback
      */
     void lightUpdate(MicroBitEvent e);

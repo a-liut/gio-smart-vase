@@ -42,65 +42,6 @@ void updateMeasurements()
     uBit.io.P1.setAnalogValue(0);
 }
 
-void onConnected(MicroBitEvent)
-{
-    connected = 1;
-
-    uBit.display.scroll("C");
-
-    ManagedString eom("$");
-    ManagedString args[2];
-
-    while (connected == 1)
-    {
-        ManagedString cmd = uart->readUntil(eom);
-        uBit.display.scroll(cmd);
-
-        if (cmd == "GET")
-        {
-            args[0] = uart->readUntil(eom);
-            uBit.display.scroll(args[0]);
-
-            if(args[0] == VALUE_LABEL_TEMPERATURE)
-            {
-                uart->send(ManagedString(temperature));
-            } else if(args[0] == VALUE_LABEL_MOISTURE)
-            {
-                uart->send(ManagedString(moisture));
-            } else if(args[0] == VALUE_LABEL_LIGHT)
-            {
-                uart->send(ManagedString(light));   
-            }
-        }
-        else if (cmd == "SET")
-        {
-            args[0] = uart->readUntil(eom);
-            uBit.display.scroll(args[0]);
-            args[1] = uart->readUntil(eom);
-            uBit.display.scroll(args[1]);
-
-            const char* buf = args[0].toCharArray();
-            char* ptr;
-            long data = strtol(buf, &ptr, 10);
-
-            if(args[0] == VALUE_LABEL_TEMPERATURE)
-            {
-                temperature = data;
-            } else if(args[0] == VALUE_LABEL_MOISTURE)
-            {
-                moisture = data;
-            } else if(args[0] == VALUE_LABEL_LIGHT)
-            {
-                light = data;
-            }
-        }
-        else
-        {
-            // Command not recognized
-        }
-    }
-}
-
 void onDisconnected(MicroBitEvent)
 {
     uBit.display.scroll("D");
@@ -139,7 +80,7 @@ void onWateringRequested(MicroBitEvent)
 
 // }
 
-int main()
+void init()
 {
     // Initialise the micro:bit runtime.
     uBit.init();
@@ -149,15 +90,19 @@ int main()
 
     // This will returns 0 on the first call
     uBit.display.readLightLevel();
+}
+
+int main()
+{
+    init();
 
     // BLE setup
-    uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_CONNECTED, onConnected);
+    // uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_CONNECTED, onConnected);
     uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_DISCONNECTED, onDisconnected);
     uBit.messageBus.listen(WATERING_EVENT_ID, WATERING_EVENT_REQUESTED, onWateringRequested);
     // uBit.messageBus.listen(WATERING_EVENT_ID, WATERING_EVENT_STARTED, onWateringStarted);
     // uBit.messageBus.listen(WATERING_EVENT_ID, WATERING_EVENT_ENDED, onWateringEnded);
 
-    uart = new MicroBitUARTService(*uBit.ble, 32, 32);
     lightService = new MicroBitLightService(*uBit.ble, uBit.display);
     temperatureService = new MicroBitTemperatureService(*uBit.ble, uBit.thermometer);
 
