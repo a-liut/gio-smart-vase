@@ -29,7 +29,7 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitConfig.h"
 #include "ble/BLE.h"
 #include "EventModel.h"
-#include "MicroBitMoistureSensor.h"
+#include "../../sensors/moisture/MicroBitMoistureSensor.h"
 
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitMoistureServiceUUID[];

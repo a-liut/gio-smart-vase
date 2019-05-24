@@ -31,7 +31,7 @@ DEALINGS IN THE SOFTWARE.
 #include "ble/UUID.h"
 
 #include "MicroBitMoistureService.h"
-#include "MicroBitMoistureSensor.h"
+#include "../../sensors/moisture/MicroBitMoistureSensor.h"
 
 /**
   * Constructor.

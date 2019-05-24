@@ -1,9 +1,10 @@
 #include "MicroBit.h"
 #include "MicroBitUARTService.h"
-#include "MicroBitLightService.h"
 #include "MicroBitTemperatureService.h"
-#include "MicroBitMoistureSensor.h"
-#include "MicroBitMoistureService.h"
+#include "services/light/MicroBitLightService.h"
+
+#include "sensors/moisture/MicroBitMoistureSensor.h"
+#include "services/moisture/MicroBitMoistureService.h"
 
 #define UPDATE_TIMEOUT 2000
 
