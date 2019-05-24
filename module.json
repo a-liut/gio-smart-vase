@@ -1,0 +1,11 @@
+{
+    "name": "gio-smart-vase",
+    "version": "2.1.1",
+    "description": "Gio Smart Vase driver",
+    "license": "MIT",
+    "dependencies": {
+        "microbit": "lancaster-university/microbit#v2.1.1"
+    },
+    "targetDependencies": {},
+    "bin": "./source"
+}
