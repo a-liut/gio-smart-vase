@@ -89,6 +89,8 @@ int MicroBitMoistureSensor::updateSample()
         moisture = readPin->getAnalogValue();
         writePin->setAnalogValue(0);
 
+        moisture = (moisture * 100) / 1023;
+
         // Schedule our next sample.
         sampleTime = system_timer_current_time() + samplePeriod;
 

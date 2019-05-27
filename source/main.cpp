@@ -28,10 +28,10 @@ MicroBitWateringActuator wateringActuator(uBit.io.P2);
 
 // Data
 /**
- * Preset moisture level.
+ * Preset moisture level in percentage.
  * TODO: this will be changed with a configuration-defined value
  */
-int32_t targetMoisture = 125;
+int32_t targetMoisture = 20;
 
 /**
  * If true the watering operation is forced to run
