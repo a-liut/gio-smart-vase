@@ -44,6 +44,7 @@ readPin(&_readPin), writePin(&_writePin)
     this->id = id;
     this->samplePeriod = MICROBIT_MOISTURE_PERIOD;
     this->sampleTime = 0;
+    this->moisture = 0;
 }
 
 /**
@@ -55,12 +56,11 @@ readPin(&_readPin), writePin(&_writePin)
   * moistureSensor.getMoistureLevel();
   * @endcode
   */
-int MicroBitMoistureSensor::getMoistureLevel()
+int32_t MicroBitMoistureSensor::getMoistureLevel()
 {
     updateSample();
     return moisture;
 }
-
 
 /**
   * Updates the moisture sample of this instance of MicroBitMoistureSensor

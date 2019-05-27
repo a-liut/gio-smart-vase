@@ -54,7 +54,7 @@ class MicroBitMoistureSensor : public MicroBitComponent
 {
     unsigned long           sampleTime;
     uint32_t                samplePeriod;
-    int16_t                 moisture;
+    int32_t                 moisture;
     MicroBitPin*            readPin;
     MicroBitPin*            writePin;
 
@@ -100,7 +100,7 @@ class MicroBitMoistureSensor : public MicroBitComponent
       * moistureSensor.getMoistureLevel();
       * @endcode
       */
-    int getMoistureLevel();
+    int32_t getMoistureLevel();
 
     /**
       * Updates the moisture sample of this instance of MicroBitThermometer

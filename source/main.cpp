@@ -16,57 +16,60 @@
 #define WATERING_EVENT_ENDED                3
 #define WATERING_TIMEOUT                    5000
 
-#define VALUE_LABEL_TEMPERATURE             ManagedString("temperature")
-#define VALUE_LABEL_MOISTURE                ManagedString("moisture")
-#define VALUE_LABEL_LIGHT                   ManagedString("light")
-
+// uBit Services
 MicroBit uBit;
 MicroBitLightService *lightService;
 MicroBitTemperatureService *temperatureService;
 MicroBitMoistureService *moistureService;
 
+// Sensors
 MicroBitMoistureSensor moistureSensor(uBit.io.P0, uBit.io.P1);
 MicroBitWateringActuator wateringActuator(uBit.io.P2);
 
-bool connected = 0;
+// Data
+/**
+ * Preset moisture level.
+ * TODO: this will be changed with a configuration-defined value
+ */
+int32_t targetMoisture = 125;
 
 /**
  * If true the watering operation is forced to run
  */
 bool forceWatering = false;
 
-// Device data
-int temperature = 0;
-int moisture = 0;
-int light = 0;
-
-void updateMeasurements()
-{
-    // Temperature
-    temperature = uBit.thermometer.getTemperature();
-
-    // Light
-    light = uBit.display.readLightLevel();
-
-    // Moisture
-    moisture = moistureSensor.getMoistureLevel();
-}
-
+/**
+ * A listener to perform actions after a BLE device connects.
+ */
 void onConnected(MicroBitEvent)
 {
     uBit.display.scroll("C");
-    connected = true;
 }
 
+/**
+ * A listener to perform actions after a BLE device disconnects.
+ */
 void onDisconnected(MicroBitEvent)
 {
     uBit.display.scroll("D");
-    connected = false;
 }
 
+/**
+ * Return true if watering is needed.
+ */
 bool canWater()
 {
-    return forceWatering || wateringActuator.isWatering(); //TODO: check watering for real
+    // No watering if the vase is actually watering the plant
+    if(wateringActuator.isWatering())
+        return false;
+
+    if(forceWatering)
+        return true;
+    
+    // Check moisture level for watering
+    int32_t moisture = moistureSensor.getMoistureLevel();
+
+    return moisture < targetMoisture;
 }
 
 /**
@@ -85,14 +88,12 @@ void init()
 }
 
 /**
- * Handles data updates.
+ * Fiber code to check sensor values.
  */
 void updateFiber()
 {
     while (1)
     {
-        updateMeasurements();
-
         // Check for watering
         if (canWater())
         {
@@ -151,7 +152,7 @@ int main()
     create_fiber(updateFiber);
     create_fiber(wateringFiber);
 
-    uBit.display.scroll("Started");
+    uBit.display.scroll("READY");
 
     release_fiber();
 }
