@@ -6,17 +6,19 @@
 #include "sensors/moisture/MicroBitMoistureSensor.h"
 #include "services/moisture/MicroBitMoistureService.h"
 
-#define UPDATE_TIMEOUT 2000
+#include "actuators/watering/MicroBitWateringActuator.h"
 
-#define WATERING_EVENT_ID 55536 // Reserved events: [1-65535]
-#define WATERING_EVENT_REQUESTED 1
-#define WATERING_EVENT_STARTED 2
-#define WATERING_EVENT_ENDED 3
-#define WATERING_TIMEOUT 2000
+#define UPDATE_TIMEOUT                      2000
 
-#define VALUE_LABEL_TEMPERATURE ManagedString("temperature")
-#define VALUE_LABEL_MOISTURE ManagedString("moisture")
-#define VALUE_LABEL_LIGHT ManagedString("light")
+#define WATERING_EVENT_ID                   55536 // Reserved events: [1-65535]
+#define WATERING_EVENT_REQUESTED            1
+#define WATERING_EVENT_STARTED              2
+#define WATERING_EVENT_ENDED                3
+#define WATERING_TIMEOUT                    5000
+
+#define VALUE_LABEL_TEMPERATURE             ManagedString("temperature")
+#define VALUE_LABEL_MOISTURE                ManagedString("moisture")
+#define VALUE_LABEL_LIGHT                   ManagedString("light")
 
 MicroBit uBit;
 MicroBitLightService *lightService;
@@ -24,9 +26,14 @@ MicroBitTemperatureService *temperatureService;
 MicroBitMoistureService *moistureService;
 
 MicroBitMoistureSensor moistureSensor(uBit.io.P0, uBit.io.P1);
+MicroBitWateringActuator wateringActuator(uBit.io.P2);
 
-int connected = 0;
-int watering = 0;
+bool connected = 0;
+
+/**
+ * If true the watering operation is forced to run
+ */
+bool forceWatering = false;
 
 // Device data
 int temperature = 0;
@@ -42,49 +49,29 @@ void updateMeasurements()
     light = uBit.display.readLightLevel();
 
     // Moisture
-    uBit.io.P1.setAnalogValue(1023);
-    moisture = uBit.io.P0.getAnalogValue();
-    uBit.io.P1.setAnalogValue(0);
+    moisture = moistureSensor.getMoistureLevel();
+}
+
+void onConnected(MicroBitEvent)
+{
+    uBit.display.scroll("C");
+    connected = true;
 }
 
 void onDisconnected(MicroBitEvent)
 {
     uBit.display.scroll("D");
-    connected = 0;
+    connected = false;
 }
 
-int canWater()
+bool canWater()
 {
-    return watering == 0;
+    return forceWatering || wateringActuator.isWatering(); //TODO: check watering for real
 }
 
-void onWateringRequested(MicroBitEvent)
-{
-    if (canWater())
-    {
-        watering = 1;
-
-        // Start the pump
-        uBit.io.P2.setDigitalValue(1);
-
-        // Wait
-        uBit.sleep(WATERING_TIMEOUT);
-
-        // Stop the pump
-        uBit.io.P2.setDigitalValue(0);
-    }
-}
-
-// void onWateringStarted(MicroBitEvent evt)
-// {
-
-// }
-
-// void onWateringEnded(MicroBitEvent evt)
-// {
-
-// }
-
+/**
+ * Initialise the micro:bit and its sensors.
+ */
 void init()
 {
     // Initialise the micro:bit runtime.
@@ -97,36 +84,74 @@ void init()
     uBit.display.readLightLevel();
 }
 
+/**
+ * Handles data updates.
+ */
+void updateFiber()
+{
+    while (1)
+    {
+        updateMeasurements();
+
+        // Check for watering
+        if (canWater())
+        {
+            MicroBitEvent evt = MicroBitEvent(WATERING_EVENT_ID, WATERING_EVENT_REQUESTED);
+            evt.fire();
+        }
+
+        // Sleep a bit before update again
+        uBit.sleep(UPDATE_TIMEOUT);
+    }
+}
+
+/**
+ * Handles watering.
+ */
+void wateringFiber()
+{
+    while (1)
+    {
+        // Wait for the watering event
+        fiber_wait_for_event(WATERING_EVENT_ID, WATERING_EVENT_REQUESTED);
+
+        wateringActuator.startWatering();
+
+        uBit.sleep(WATERING_TIMEOUT);
+
+        wateringActuator.stopWatering();
+
+        // disable forcing watering after watering
+        forceWatering = false;
+    }
+}
+
+/**
+ * Handler for Button A click.
+ */
+void onButtonAPressed(MicroBitEvent)
+{
+    forceWatering = true;
+}
+
 int main()
 {
     init();
 
     // BLE setup
-    // uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_CONNECTED, onConnected);
+    uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_CONNECTED, onConnected);
     uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_DISCONNECTED, onDisconnected);
-    uBit.messageBus.listen(WATERING_EVENT_ID, WATERING_EVENT_REQUESTED, onWateringRequested);
-    // uBit.messageBus.listen(WATERING_EVENT_ID, WATERING_EVENT_STARTED, onWateringStarted);
-    // uBit.messageBus.listen(WATERING_EVENT_ID, WATERING_EVENT_ENDED, onWateringEnded);
+    uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onButtonAPressed);
 
     lightService = new MicroBitLightService(*uBit.ble, uBit.display);
     temperatureService = new MicroBitTemperatureService(*uBit.ble, uBit.thermometer);
     moistureService = new MicroBitMoistureService(*uBit.ble, moistureSensor);
 
-    while (1)
-    {
-        if (connected == 0) {
-            uBit.display.scroll("W");
-            updateMeasurements();
+    // Setup fibers
+    create_fiber(updateFiber);
+    create_fiber(wateringFiber);
 
-            if (canWater())
-            {
-                MicroBitEvent evt = MicroBitEvent(WATERING_EVENT_ID, WATERING_EVENT_REQUESTED);
-                evt.fire();
-            }
-
-            uBit.sleep(UPDATE_TIMEOUT);
-        }
-    }
+    uBit.display.scroll("Started");
 
     release_fiber();
 }
