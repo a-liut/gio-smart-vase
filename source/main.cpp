@@ -1,10 +1,11 @@
 #include "MicroBit.h"
-#include "MicroBitUARTService.h"
+
 #include "MicroBitTemperatureService.h"
 #include "services/light/MicroBitLightService.h"
+#include "services/moisture/MicroBitMoistureService.h"
+#include "services/watering/MicroBitWateringService.h"
 
 #include "sensors/moisture/MicroBitMoistureSensor.h"
-#include "services/moisture/MicroBitMoistureService.h"
 
 #include "actuators/watering/MicroBitWateringActuator.h"
 
@@ -21,6 +22,7 @@ MicroBit uBit;
 MicroBitLightService *lightService;
 MicroBitTemperatureService *temperatureService;
 MicroBitMoistureService *moistureService;
+MicroBitWateringService *wateringService;
 
 // Sensors
 MicroBitMoistureSensor moistureSensor(uBit.io.P0, uBit.io.P1);
@@ -88,6 +90,24 @@ void init()
 }
 
 /**
+ * Start and stop the watering actuator.
+ */
+void performWatering()
+{
+    if(!wateringActuator.isWatering())
+    {
+        wateringActuator.startWatering();
+
+        uBit.sleep(WATERING_TIMEOUT);
+
+        wateringActuator.stopWatering();
+
+        // disable forcing watering after watering
+        forceWatering = false;
+    }
+}
+
+/**
  * Fiber code to check sensor values.
  */
 void updateFiber()
@@ -116,15 +136,15 @@ void wateringFiber()
         // Wait for the watering event
         fiber_wait_for_event(WATERING_EVENT_ID, WATERING_EVENT_REQUESTED);
 
-        wateringActuator.startWatering();
-
-        uBit.sleep(WATERING_TIMEOUT);
-
-        wateringActuator.stopWatering();
-
-        // disable forcing watering after watering
-        forceWatering = false;
+        uBit.serial.printf("watering requested from micro:bit\r\n");
+        performWatering();
     }
+}
+
+void onWateringRequested(MicroBitEvent)
+{
+    MicroBitEvent evt = MicroBitEvent(WATERING_EVENT_ID, WATERING_EVENT_REQUESTED);
+    evt.fire();
 }
 
 /**
@@ -143,16 +163,18 @@ int main()
     uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_CONNECTED, onConnected);
     uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_DISCONNECTED, onDisconnected);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onButtonAPressed);
+    uBit.messageBus.listen(MICROBIT_ID_WATERING_SERVICE, WATERING_EVT_REQUESTED, onWateringRequested);
 
     lightService = new MicroBitLightService(*uBit.ble, uBit.display);
     temperatureService = new MicroBitTemperatureService(*uBit.ble, uBit.thermometer);
     moistureService = new MicroBitMoistureService(*uBit.ble, moistureSensor);
+    wateringService = new MicroBitWateringService(*uBit.ble, wateringActuator);
 
     // Setup fibers
     create_fiber(updateFiber);
     create_fiber(wateringFiber);
 
-    uBit.display.scroll("READY");
+    uBit.display.scroll("R");
 
     release_fiber();
 }

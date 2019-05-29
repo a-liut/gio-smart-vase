@@ -1,4 +1,5 @@
 #include "MicroBitPin.h"
+#include "MicroBitEvent.h"
 #include "MicroBitWateringActuator.h"
 
 /**
@@ -15,7 +16,9 @@ MicroBitWateringActuator::MicroBitWateringActuator(MicroBitPin &_trigger) : trig
 }
 
 /**
-  * Start watering immediately
+  * Start watering immediately.
+  *
+  * @return the state of the actuator after the operation.
   */
 void MicroBitWateringActuator::startWatering()
 {
@@ -23,11 +26,17 @@ void MicroBitWateringActuator::startWatering()
     {
         startPump();
         status = MICROBIT_WATERING_ON;
+
+        // Trigger event
+        MicroBitEvent ev = MicroBitEvent(MICROBIT_ID_WATERING_ACTUATOR, MICROBIT_WATERING_ACTUATOR_EVT_UPDATE);
+        ev.fire();
     }
 }
 
 /**
-  * Stops watering immediately
+  * Stops watering immediately.
+  *
+  * @return the state of the actuator after the operation.
   */
 void MicroBitWateringActuator::stopWatering()
 {
@@ -35,6 +44,10 @@ void MicroBitWateringActuator::stopWatering()
     {
         stopPump();
         status = MICROBIT_WATERING_OFF;
+
+        // Trigger event
+        MicroBitEvent ev = MicroBitEvent(MICROBIT_ID_WATERING_ACTUATOR, MICROBIT_WATERING_ACTUATOR_EVT_UPDATE);
+        ev.fire();
     }
 }
 

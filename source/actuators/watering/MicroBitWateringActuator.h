@@ -26,12 +26,16 @@ class MicroBitWateringActuator
     MicroBitWateringActuator(MicroBitPin &_trigger);
 
     /**
-     * Start watering immediately
+     * Start watering immediately.
+     * 
+     * @return returns the state of the actuator after the operation.
      */
     void startWatering();
 
     /**
-     * Stops watering immediately
+     * Stop watering immediately.
+     * 
+     * @return returns the state of the actuator after the operation.
      */
     void stopWatering();
 
@@ -43,12 +47,12 @@ class MicroBitWateringActuator
     private:
 
     /**
-     * Start the pump
+     * Start the pump.
      */
     void startPump();
 
     /**
-     * Stop the pump
+     * Stop the pump.
      */
     void stopPump();
 

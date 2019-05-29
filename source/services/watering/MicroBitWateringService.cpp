@@ -29,6 +29,7 @@ DEALINGS IN THE SOFTWARE.
   */
 #include "MicroBitConfig.h"
 #include "ble/UUID.h"
+#include "MicroBitEvent.h"
 
 #include "../../actuators/watering/MicroBitWateringActuator.h"
 #include "MicroBitWateringService.h"
@@ -44,7 +45,7 @@ MicroBitWateringService::MicroBitWateringService(BLEDevice &_ble, MicroBitWateri
 {
     // Create the data structures that represent each of our characteristics in Soft Device.
     GattCharacteristic  wateringDataCharacteristic(MicroBitWateringServiceDataUUID, (uint8_t *)&wateringDataCharacteristicBuffer, 0,
-    sizeof(wateringDataCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
+    sizeof(wateringDataCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
 
     // Initialise our characteristic values.
     wateringDataCharacteristicBuffer = actuator.isWatering();
@@ -61,6 +62,7 @@ MicroBitWateringService::MicroBitWateringService(BLEDevice &_ble, MicroBitWateri
 
     ble.gattServer().write(wateringDataCharacteristicHandle,(uint8_t *)&wateringDataCharacteristicBuffer, sizeof(wateringDataCharacteristicBuffer));
 
+    ble.onDataWritten(this, &MicroBitWateringService::onDataWritten);
     if (EventModel::defaultEventBus)
         EventModel::defaultEventBus->listen(MICROBIT_ID_WATERING_ACTUATOR, MICROBIT_WATERING_ACTUATOR_EVT_UPDATE, this, &MicroBitWateringService::wateringUpdate, MESSAGE_BUS_LISTENER_IMMEDIATE);
 }
@@ -77,11 +79,33 @@ void MicroBitWateringService::wateringUpdate(MicroBitEvent)
     }
 }
 
+/**
+  * Callback. Invoked when any of our attributes are written via BLE.
+  */
+void MicroBitWateringService::onDataWritten(const GattWriteCallbackParams *params)
+{
+    if (params->handle == wateringDataCharacteristicHandle && params->len >= sizeof(wateringDataCharacteristicBuffer))
+    {
+        wateringDataCharacteristicBuffer = *((uint16_t *)params->data);
+        if(wateringDataCharacteristicBuffer)
+        {
+            // trigger watering
+            MicroBitEvent evt = MicroBitEvent(MICROBIT_ID_WATERING_SERVICE, WATERING_EVT_REQUESTED);
+            evt.fire();
+        }
 
+        wateringDataCharacteristicBuffer = actuator.isWatering();
+        ble.gattServer().write(wateringDataCharacteristicHandle,(uint8_t *)&wateringDataCharacteristicBuffer, sizeof(wateringDataCharacteristicBuffer));
+    }
+}
+
+
+// ce9eafe4c44341db9cb581e567f3ba93
 const uint8_t  MicroBitWateringServiceUUID[] = {
-    0xe9,0x6d,0x71,0x00,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8
+    0xce,0x9e,0xaf,0xe4,0xc4,0x43,0x41,0xdb,0x9c,0xb5,0x81,0xe5,0x67,0xf3,0xba,0x93
 };
 
+// ce9e7625c44341db9cb581e567f3ba93
 const uint8_t  MicroBitWateringServiceDataUUID[] = {
-    0xe9,0x6d,0x72,0x50,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8
+    0xce,0x9e,0x76,0x25,0xc4,0x43,0x41,0xdb,0x9c,0xb5,0x81,0xe5,0x67,0xf3,0xba,0x93
 };

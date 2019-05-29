@@ -32,6 +32,9 @@ DEALINGS IN THE SOFTWARE.
 
 #include "../../actuators/watering/MicroBitWateringActuator.h"
 
+#define MICROBIT_ID_WATERING_SERVICE          1334
+#define WATERING_EVT_REQUESTED                42
+
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitWateringServiceUUID[];
 extern const uint8_t  MicroBitWateringServiceDataUUID[];
@@ -56,6 +59,11 @@ class MicroBitWateringService
      * Watering update callback
      */
     void wateringUpdate(MicroBitEvent e);
+    
+    /**
+      * Callback. Invoked when any of our attributes are written via BLE.
+      */
+    void onDataWritten(const GattWriteCallbackParams *params);
 
     private:
 
