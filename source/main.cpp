@@ -96,7 +96,7 @@ void performWatering()
 {
     if(!wateringActuator.isWatering())
     {
-        MicroBitImage smiley("0,255,0,255, 0\n0,255,0,255,0\n0,0,0,0,0\n32,0,0,0,32\n0,32,32,32,0\n");
+        MicroBitImage smiley("0,0,255,0, 0\n0,0,255,0,0\n0,255,0,255,0\n255,0,0,0,255\n0,255,0,255,0\n");
         uBit.display.setDisplayMode(DISPLAY_MODE_GREYSCALE);
         uBit.display.print(smiley);
 
