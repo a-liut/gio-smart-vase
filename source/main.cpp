@@ -96,11 +96,17 @@ void performWatering()
 {
     if(!wateringActuator.isWatering())
     {
+        MicroBitImage smiley("0,255,0,255, 0\n0,255,0,255,0\n0,0,0,0,0\n32,0,0,0,32\n0,32,32,32,0\n");
+        uBit.display.setDisplayMode(DISPLAY_MODE_GREYSCALE);
+        uBit.display.print(smiley);
+
         wateringActuator.startWatering();
 
         uBit.sleep(WATERING_TIMEOUT);
 
         wateringActuator.stopWatering();
+
+        uBit.display.clear();
 
         // disable forcing watering after watering
         forceWatering = false;
@@ -143,6 +149,7 @@ void wateringFiber()
 
 void onWateringRequested(MicroBitEvent)
 {
+    uBit.serial.printf("watering requested from ble\r\n");
     MicroBitEvent evt = MicroBitEvent(WATERING_EVENT_ID, WATERING_EVENT_REQUESTED);
     evt.fire();
 }
