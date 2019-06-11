@@ -45,7 +45,7 @@ bool forceWatering = false;
  */
 void onConnected(MicroBitEvent)
 {
-    uBit.display.scroll("C");
+    uBit.display.printChar('C');
 }
 
 /**
