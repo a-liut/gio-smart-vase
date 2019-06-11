@@ -26,6 +26,8 @@ DEALINGS IN THE SOFTWARE.
 #ifndef MICROBIT_LIGHT_SERVICE_H
 #define MICROBIT_LIGHT_SERVICE_H
 
+#define MICROBIT_LIGHT_SERVICE_PERIOD 5000
+
 #include "MicroBitConfig.h"
 #include "ble/BLE.h"
 #include "MicroBitDisplay.h"
@@ -62,8 +64,11 @@ class MicroBitLightService
     BLEDevice           	&ble;
     MicroBitDisplay     &display;
 
-    // memory for our 8 bit temperature characteristic.
+    // Memory for our 8 bit temperature characteristic.
     int8_t             lightDataCharacteristicBuffer;
+
+    // Last light update
+    uint64_t lastUpdate;
 
     // Handles to access each characteristic when they are held by Soft Device.
     GattAttribute::Handle_t lightDataCharacteristicHandle;

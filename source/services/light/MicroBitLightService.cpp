@@ -31,6 +31,7 @@ DEALINGS IN THE SOFTWARE.
 #include "ble/UUID.h"
 
 #include "MicroBitLightService.h"
+#include "MicroBitSystemTimer.h"
 
 /**
   * Constructor.
@@ -47,6 +48,7 @@ MicroBitLightService::MicroBitLightService(BLEDevice &_ble, MicroBitDisplay &_di
 
     // Initialise our characteristic values.
     lightDataCharacteristicBuffer = display.readLightLevel();
+    lastUpdate = system_timer_current_time();
 
     // Set default security requirements
     lightDataCharacteristic.requireSecurity(SecurityManager::MICROBIT_BLE_SECURITY_LEVEL);
@@ -69,10 +71,12 @@ MicroBitLightService::MicroBitLightService(BLEDevice &_ble, MicroBitDisplay &_di
   */
 void MicroBitLightService::lightUpdate(MicroBitEvent)
 {
-    if (ble.getGapState().connected)
+    if (ble.getGapState().connected && lastUpdate + MICROBIT_LIGHT_SERVICE_PERIOD <= system_timer_current_time())
     {
         lightDataCharacteristicBuffer = display.readLightLevel();
         ble.gattServer().notify(lightDataCharacteristicHandle,(uint8_t *)&lightDataCharacteristicBuffer, sizeof(lightDataCharacteristicBuffer));
+
+        lastUpdate = system_timer_current_time();
     }
 }
 
