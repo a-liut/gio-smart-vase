@@ -7,8 +7,11 @@
   * Create a representation of the MicrovitWateringActuator
   * @param _trigger The pin used to drive the watering
   */
-MicroBitWateringActuator::MicroBitWateringActuator(MicroBitPin &_trigger) : trigger(_trigger)
+MicroBitWateringActuator::MicroBitWateringActuator(MicroBitPin &_trigger) : 
+    trigger(_trigger)
 {
+    remaining_waterings = MICROBIT_WATERINGS_COUNT;
+
     // Make sure that the pump is off when creating the actuator.
     stopPump();
 
@@ -22,10 +25,12 @@ MicroBitWateringActuator::MicroBitWateringActuator(MicroBitPin &_trigger) : trig
   */
 void MicroBitWateringActuator::startWatering()
 {
-    if(status == MICROBIT_WATERING_OFF)
+    if(status == MICROBIT_WATERING_OFF && enoughWater())
     {
         startPump();
         status = MICROBIT_WATERING_ON;
+
+        remaining_waterings--;
 
         // Trigger event
         MicroBitEvent ev = MicroBitEvent(MICROBIT_ID_WATERING_ACTUATOR, MICROBIT_WATERING_ACTUATOR_EVT_UPDATE);
@@ -40,7 +45,7 @@ void MicroBitWateringActuator::startWatering()
   */
 void MicroBitWateringActuator::stopWatering()
 {
-    if(status == MICROBIT_WATERING_ON)
+    if(status == MICROBIT_WATERING_ON && enoughWater())
     {
         stopPump();
         status = MICROBIT_WATERING_OFF;
@@ -73,4 +78,25 @@ void MicroBitWateringActuator::stopPump()
 bool MicroBitWateringActuator::isWatering()
 {
     return status;
+}
+
+/**
+ * Return true if there is enough water for watering.
+ */
+bool MicroBitWateringActuator::enoughWater()
+{
+    return remaining_waterings > 0;
+}
+
+/**
+ * Set the count of how many times the pump should be activated
+ */
+void MicroBitWateringActuator::setWateringCount(int c)
+{
+    if (c < 0)
+    {
+        c = MICROBIT_WATERINGS_COUNT;
+    }
+
+    remaining_waterings = c;
 }

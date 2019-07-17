@@ -10,9 +10,12 @@
 #define MICROBIT_WATERING_ON                    1
 #define MICROBIT_WATERING_OFF                   0
 
+#define MICROBIT_WATERINGS_COUNT                4
+
 /**
  * Class definition for the custom MicroBit WateringActuator.
  * Manages the watering of the plant.
+ * For safety purposes, if the water level is too low or is not available, the pump is not activated.
  */
 class MicroBitWateringActuator
 {
@@ -44,6 +47,16 @@ class MicroBitWateringActuator
      */
     bool isWatering();
 
+    /**
+     * Return true if there is enough water for watering.
+     */
+    bool enoughWater();
+
+    /**
+     * Set the count of how many times the pump should be activated
+     */
+    void setWateringCount(int c);
+
     private:
 
     /**
@@ -56,10 +69,19 @@ class MicroBitWateringActuator
      */
     void stopPump();
 
-    // Pin to use to start/stop the pump
+    /**
+     * Pin to use to start/stop the pump
+     */
     MicroBitPin &trigger;
 
-    // Actuator's current status
+    /**
+     * Waterings remaining
+     */
+    int32_t remaining_waterings;
+
+    /**
+     * Actuator's current status
+     */
     int32_t status;
 };
 

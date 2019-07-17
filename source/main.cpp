@@ -61,9 +61,10 @@ void onDisconnected(MicroBitEvent)
  */
 bool canWater()
 {
-    // No watering if the vase is actually watering the plant
-    if(wateringActuator.isWatering())
+    // No watering if the vase is actually watering the plant or there isn't enough water
+    if(wateringActuator.isWatering() || !wateringActuator.enoughWater()) {
         return false;
+    }
 
     if(forceWatering)
         return true;
@@ -141,15 +142,12 @@ void wateringFiber()
     {
         // Wait for the watering event
         fiber_wait_for_event(WATERING_EVENT_ID, WATERING_EVENT_REQUESTED);
-
-        uBit.serial.printf("watering requested from micro:bit\r\n");
         performWatering();
     }
 }
 
 void onWateringRequested(MicroBitEvent)
 {
-    uBit.serial.printf("watering requested from ble\r\n");
     MicroBitEvent evt = MicroBitEvent(WATERING_EVENT_ID, WATERING_EVENT_REQUESTED);
     evt.fire();
 }
@@ -162,6 +160,12 @@ void onButtonAPressed(MicroBitEvent)
     forceWatering = true;
 }
 
+void onButtonBPressed(MicroBitEvent)
+{
+    uBit.display.scroll("W");
+    wateringActuator.setWateringCount(MICROBIT_WATERINGS_COUNT);
+}
+
 int main()
 {
     init();
@@ -171,6 +175,8 @@ int main()
     uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_DISCONNECTED, onDisconnected);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onButtonAPressed);
     uBit.messageBus.listen(MICROBIT_ID_WATERING_SERVICE, WATERING_EVT_REQUESTED, onWateringRequested);
+    
+    uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBPressed);
 
     lightService = new MicroBitLightService(*uBit.ble, uBit.display);
     temperatureService = new MicroBitTemperatureService(*uBit.ble, uBit.thermometer);
