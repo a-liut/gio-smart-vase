@@ -9,7 +9,7 @@
 
 #include "actuators/watering/MicroBitWateringActuator.h"
 
-#define UPDATE_TIMEOUT                      2000
+#define UPDATE_TIMEOUT                      5000
 
 #define WATERING_EVENT_ID                   55536 // Reserved events: [1-65535]
 #define WATERING_EVENT_REQUESTED            1
