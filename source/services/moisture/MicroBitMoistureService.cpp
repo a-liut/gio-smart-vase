@@ -34,6 +34,13 @@ DEALINGS IN THE SOFTWARE.
 #include "../../sensors/moisture/MicroBitMoistureSensor.h"
 
 /**
+ * Returns true if value is a valid moisture level.
+ */
+bool isMoistureTresholdValid(int32_t value) {
+  return value > 0;
+}
+
+/**
   * Constructor.
   * Create a representation of the MoistureService
   * @param _ble The instance of a BLE device that we're running on.
@@ -44,7 +51,7 @@ MicroBitMoistureService::MicroBitMoistureService(BLEDevice &_ble, MicroBitMoistu
 {
     // Create the data structures that represent each of our characteristics in Soft Device.
     GattCharacteristic  moistureDataCharacteristic(MicroBitMoistureServiceDataUUID, (uint8_t *)&moistureDataCharacteristicBuffer, 0,
-    sizeof(moistureDataCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
+    sizeof(moistureDataCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
 
     // Initialise our characteristic values.
     moistureDataCharacteristicBuffer = sensor.getMoistureLevel();
@@ -61,6 +68,7 @@ MicroBitMoistureService::MicroBitMoistureService(BLEDevice &_ble, MicroBitMoistu
 
     ble.gattServer().write(moistureDataCharacteristicHandle,(uint8_t *)&moistureDataCharacteristicBuffer, sizeof(moistureDataCharacteristicBuffer));
 
+    ble.onDataWritten(this, &MicroBitMoistureService::onDataWritten);
     if (EventModel::defaultEventBus)
         EventModel::defaultEventBus->listen(MICROBIT_ID_MOISTURE, MICROBIT_MOISTURE_EVT_UPDATE, this, &MicroBitMoistureService::moistureUpdate, MESSAGE_BUS_LISTENER_IMMEDIATE);
 }
@@ -75,6 +83,36 @@ void MicroBitMoistureService::moistureUpdate(MicroBitEvent)
         moistureDataCharacteristicBuffer = sensor.getMoistureLevel();
         ble.gattServer().notify(moistureDataCharacteristicHandle,(uint8_t *)&moistureDataCharacteristicBuffer, sizeof(moistureDataCharacteristicBuffer));
     }
+}
+
+/**
+  * Callback. Invoked when any of our attributes are written via BLE.
+  */
+void MicroBitMoistureService::onDataWritten(const GattWriteCallbackParams *params)
+{
+    if (params->handle == moistureDataCharacteristicHandle && params->len >= sizeof(moistureDataCharacteristicBuffer))
+    {
+        moistureDataCharacteristicBuffer = *((uint16_t *)params->data);
+        if(isMoistureTresholdValid(moistureDataCharacteristicBuffer))
+        {
+            // update value
+            moistureTreshold = moistureDataCharacteristicBuffer;
+
+            // fire update event
+            MicroBitEvent evt = MicroBitEvent(MICROBIT_ID_MOISTURE_SERVICE, MOISTURE_TRESHOLD_UPDATED);
+            evt.fire();
+        }
+
+        moistureDataCharacteristicBuffer = sensor.getMoistureLevel();
+        ble.gattServer().notify(moistureDataCharacteristicHandle,(uint8_t *)&moistureDataCharacteristicBuffer, sizeof(moistureDataCharacteristicBuffer));
+    }
+}
+
+/**
+  * Get the moisture level treshold set
+  */
+int32_t MicroBitMoistureService::getMoistureLevelTreshold() {
+  return moistureTreshold;
 }
 
 // 73cd5e04d32c4345a543487435c70c48

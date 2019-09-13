@@ -29,7 +29,11 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitConfig.h"
 #include "ble/BLE.h"
 #include "EventModel.h"
+
 #include "../../sensors/moisture/MicroBitMoistureSensor.h"
+
+#define MICROBIT_ID_MOISTURE_SERVICE          1335
+#define MOISTURE_TRESHOLD_UPDATED             43
 
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitMoistureServiceUUID[];
@@ -57,11 +61,19 @@ class MicroBitMoistureService
     void moistureUpdate(MicroBitEvent e);
 
     /**
-     * Read the moisture level
+     * Get the moisture level treshold set
      */
-    int readMoisture();
+    int32_t getMoistureLevelTreshold();
+
+    /**
+    * Callback. Invoked when any of our attributes are written via BLE.
+    */
+    void onDataWritten(const GattWriteCallbackParams *params);
 
     private:
+
+    // moisture level treshold
+    int32_t moistureTreshold;
 
     // Bluetooth stack we're running on.
     BLEDevice           	&ble;

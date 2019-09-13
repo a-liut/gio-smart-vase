@@ -28,24 +28,42 @@ MicroBitWateringService *wateringService;
 MicroBitMoistureSensor moistureSensor(uBit.io.P0, uBit.io.P1);
 MicroBitWateringActuator wateringActuator(uBit.io.P2);
 
-// Data
-/**
- * Preset moisture level in percentage.
- * TODO: this will be changed with a configuration-defined value
- */
-int32_t targetMoisture = 20;
-
 /**
  * If true the watering operation is forced to run
  */
 bool forceWatering = false;
 
 /**
+ * true when the device is connected
+ */
+bool connected = false;
+
+void updateDisplay()
+{
+    if (wateringActuator.isWatering())
+    {
+        MicroBitImage smiley("0,0,255,0, 0\n0,0,255,0,0\n0,255,0,255,0\n255,0,0,0,255\n0,255,0,255,0\n");
+        uBit.display.setDisplayMode(DISPLAY_MODE_GREYSCALE);
+        uBit.display.print(smiley);
+    } else
+    {
+        if (connected)
+        {
+            uBit.display.printChar('C');
+        } else
+        {
+            uBit.display.scroll("D");
+        }
+    }
+}
+
+/**
  * A listener to perform actions after a BLE device connects.
  */
 void onConnected(MicroBitEvent)
 {
-    uBit.display.printChar('C');
+    connected = true;
+    updateDisplay();
 }
 
 /**
@@ -53,7 +71,8 @@ void onConnected(MicroBitEvent)
  */
 void onDisconnected(MicroBitEvent)
 {
-    uBit.display.scroll("D");
+    connected = false;
+    updateDisplay();
 }
 
 /**
@@ -72,7 +91,7 @@ bool canWater()
     // Check moisture level for watering
     int32_t moisture = moistureSensor.getMoistureLevel();
 
-    return moisture < targetMoisture;
+    return moisture < (*moistureService).getMoistureLevelTreshold();
 }
 
 /**
@@ -97,17 +116,15 @@ void performWatering()
 {
     if(!wateringActuator.isWatering())
     {
-        MicroBitImage smiley("0,0,255,0, 0\n0,0,255,0,0\n0,255,0,255,0\n255,0,0,0,255\n0,255,0,255,0\n");
-        uBit.display.setDisplayMode(DISPLAY_MODE_GREYSCALE);
-        uBit.display.print(smiley);
-
         wateringActuator.startWatering();
+
+        updateDisplay();
 
         uBit.sleep(WATERING_TIMEOUT);
 
         wateringActuator.stopWatering();
 
-        uBit.display.clear();
+        updateDisplay();
 
         // disable forcing watering after watering
         forceWatering = false;
@@ -164,6 +181,7 @@ void onButtonBPressed(MicroBitEvent)
 {
     uBit.display.scroll("W");
     wateringActuator.setWateringCount(MICROBIT_WATERINGS_COUNT);
+    updateDisplay();
 }
 
 int main()

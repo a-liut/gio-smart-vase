@@ -89,7 +89,7 @@ void MicroBitWateringService::onDataWritten(const GattWriteCallbackParams *param
         wateringDataCharacteristicBuffer = *((uint16_t *)params->data);
         if(wateringDataCharacteristicBuffer)
         {
-            // trigger watering
+            // fire watering event
             MicroBitEvent evt = MicroBitEvent(MICROBIT_ID_WATERING_SERVICE, WATERING_EVT_REQUESTED);
             evt.fire();
         }
