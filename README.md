@@ -19,8 +19,8 @@ The SmartVase exposes the following BLE Characteristics, in addition to the defa
 - Moisture: Moisture level (0 - 255)
   - Service: -
   - Characteristic: 73cd7350d32c4345a543487435c70c48
-  - Properties: NOTIFY
-  - dry: 250, wet: 100
+  - Properties: NOTIFY, WRITE
+  - dry: 24, wet: 100
 - Watering: pump trigger
   - Service: -
   - Characteristic: ce9e7625c44341db9cb581e567f3ba93
