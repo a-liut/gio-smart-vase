@@ -52,7 +52,7 @@ void updateDisplay()
             uBit.display.printChar('C');
         } else
         {
-            uBit.display.scroll("D");
+            uBit.display.scrollAsync("D");
         }
     }
 }
