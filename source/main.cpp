@@ -187,7 +187,5 @@ int main()
     create_fiber(updateFiber);
     create_fiber(wateringFiber);
 
-    uBit.display.scroll("R");
-
     release_fiber();
 }
