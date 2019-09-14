@@ -100,3 +100,8 @@ void MicroBitWateringActuator::setWateringCount(int c)
 
     remaining_waterings = c;
 }
+
+int MicroBitWateringActuator::getWateringCount()
+{
+    return remaining_waterings;
+}

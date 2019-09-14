@@ -57,6 +57,11 @@ class MicroBitWateringActuator
      */
     void setWateringCount(int c);
 
+    /**
+     * Return the remaining waterings count
+     */
+    int getWateringCount();
+
     private:
 
     /**

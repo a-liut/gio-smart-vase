@@ -161,14 +161,14 @@ void onButtonAPressed(MicroBitEvent)
 
 void onButtonBPressed(MicroBitEvent)
 {
-    uBit.display.scrollAsync('W');
     wateringActuator.setWateringCount(MICROBIT_WATERINGS_COUNT);
+    uBit.display.scrollAsync(wateringActuator.getWateringCount());
 }
 
 void onMoistureUpdated(MicroBitEvent)
 {
-    int32_t t = (*moistureService).getMoistureLevelTreshold();
-    uBit.display.scrollAsync((int)t);
+    int t = (int)(*moistureService).getMoistureLevelTreshold();
+    uBit.display.scrollAsync(t);
 }
 
 int main()
